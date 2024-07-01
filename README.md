@@ -1,2 +1,2 @@
 # OnlineLLM
-Repo for an Online LLM model implemented in Rust Lang
+Repo for an Online LLM implemented in Rust Lang
