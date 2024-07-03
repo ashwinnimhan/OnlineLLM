@@ -1,14 +1,17 @@
 name: PR deploy
 
 on:
-  pull_request:
-    types: [closed]
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - main
+  push:
     branches:
-      - main
+      - dev
 
 jobs:
   build-and-deploy:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +51,7 @@ jobs:
             export OPENAI_API_KEY=$OPENAI_API_KEY
 
             # Run the application using nohup
-            nohup /usr/local/bin/OnlineLLM > output.log 2>&1 &
+            nohup /usr/local/bin/OnlineLLM &
             echo $ > pid.txt
 
             # Check if the application is running
