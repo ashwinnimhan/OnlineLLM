@@ -53,8 +53,15 @@ jobs:
             sudo chown root:root /etc/systemd/system/OnlineLLM.service
             sudo chmod 644 /etc/systemd/system/OnlineLLM.service
 
-            # Set environment variable in systemd service file
-            sudo sed -i "/Environment=OPENAI_API_KEY=.*/c\Environment=OPENAI_API_KEY=$OPENAI_API_KEY" /etc/systemd/system/OnlineLLM.service
+            # Set the OPENAI_API_KEY as an environment variable
+            echo "OPENAI_API_KEY=$OPENAI_API_KEY" | sudo tee /etc/environment > /dev/null
+            source /etc/environment
+
+            # Ensure the service can read the environment variable
+            sudo sed -i "/Environment=OPENAI_API_KEY/d" /etc/systemd/system/OnlineLLM.service
+            echo "Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"" | sudo tee -a /etc/systemd/system/OnlineLLM.service > /dev/null
+
+            # Reload systemd to apply changes
             sudo systemctl daemon-reload
 
             # Restart your application service
@@ -63,7 +70,13 @@ jobs:
             # Enable the service to start on boot
             sudo systemctl enable OnlineLLM
 
-            # Check if the service is running
+            # Check if the service is running and display status
+            sudo systemctl status OnlineLLM
+
+            # Display recent logs
+            sudo journalctl -u OnlineLLM -n 50 --no-pager
+
+            # Check if the service is active
             if sudo systemctl is-active --quiet OnlineLLM; then
               echo "OnlineLLM service is running"
             else
