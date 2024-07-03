@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse, Responder, Result};
+use std::env;
 
 use crate::helpers::google_search;
 use crate::helpers::bing_search;
@@ -49,18 +50,14 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
   }
 
   // Step 4: Send request to LLM
-  let api_key = String::from("your-api-key-here"); // Replace with actual API key
+  let api_key = match env::var("OPENAI_API_KEY") {
+    Ok(value) => { value }
+    Err(e) => { "".to_string() }
+  };
   let result = match llm_request::generate_chat_completion(&api_key, prompt).await {
     Ok(result) => result,
     Err(e) => return HttpResponse::InternalServerError().json(format!("Error in LLM request: {}", e)),
   };
-
-  println!("LLM response:");
-  for choice in &result.choices {
-    println!("Choice:");
-    println!("Role: {}", choice.message.role);
-    println!("{}", choice.message.content);
-  }
 
   HttpResponse::Ok().json(result)
 }
