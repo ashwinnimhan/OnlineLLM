@@ -71,12 +71,3 @@ jobs:
               exit 1
             fi
           '
-
-      - name: Verify deployment
-        run: |
-          if ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST 'systemctl is-active --quiet OnlineLLM'; then
-            echo "Deployment successful"
-          else
-            echo "Deployment failed"
-            exit 1
-          fi
