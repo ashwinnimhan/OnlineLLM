@@ -38,17 +38,21 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
       Ok(content) => content,
       Err(e) => return HttpResponse::InternalServerError().json(format!("Error in web_crawler: {}", e)),
     };
-    pages.push(format!("- Title: {}\n - Publisher: {}\n - url: {}\n - content: {}", entry.title, entry.source, entry.url, text_content));
+    pages.push(format!(" - Title: {}\n - Publisher: {}\n - content: {}", entry.title, entry.source, text_content));
   }
 
   // Step 3: Prepare the prompt for LLM
   let mut prompt = vec![
-    (format!("Based on the following information, {}", query), String::from("user")),
+    (format!("NOTE: DO NOT CRAWL LINKS. Based on the following information, and the news article's metadata {}", query), String::from("user")),
   ];
   for pg in &pages {
-    prompt.push((pg.to_string(), String::from("user")));
-  }
+    let length = 1500;
+    let pg_cut = if pg.len() > length { &pg[..length] } else { pg };
 
+    println!("{}", pg_cut);
+    prompt.push((pg_cut.to_string(), String::from("user")));
+  }
+  
   // Step 4: Send request to LLM
   let api_key = match env::var("OPENAI_API_KEY") {
     Ok(value) => { value }
