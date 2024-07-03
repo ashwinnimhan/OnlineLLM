@@ -26,7 +26,7 @@ jobs:
 
       - name: Deploy to EC2 and set environment variable
         env:
-          EC2_USER: ec2-user
+          EC2_USER: ${{ secrets.EC2_USER }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
