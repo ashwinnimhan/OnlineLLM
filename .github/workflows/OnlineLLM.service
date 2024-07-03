@@ -7,7 +7,7 @@ ExecStart=/usr/local/bin/OnlineLLM
 Restart=always
 User=ubuntu
 Environment="OPENAI_API_KEY=%OPENAI_API_KEY%"
-WorkingDirectory=/home/ubuntu/OnlineLLM
+WorkingDirectory=/home/ubuntu
 StandardOutput=journal
 StandardError=journal
 

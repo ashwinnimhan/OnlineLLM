@@ -40,9 +40,6 @@ jobs:
 
           # SSH into EC2 instance and execute commands
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
-            # Update package list
-            sudo apt update
-
             # Move application to appropriate directory
             sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
             sudo chown root:root /usr/local/bin/OnlineLLM
@@ -53,13 +50,8 @@ jobs:
             sudo chown root:root /etc/systemd/system/OnlineLLM.service
             sudo chmod 644 /etc/systemd/system/OnlineLLM.service
 
-            # Set the OPENAI_API_KEY as an environment variable
-            echo "OPENAI_API_KEY=$OPENAI_API_KEY" | sudo tee /etc/environment > /dev/null
-            source /etc/environment
-
-            # Ensure the service can read the environment variable
-            sudo sed -i "/Environment=OPENAI_API_KEY/d" /etc/systemd/system/OnlineLLM.service
-            echo "Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"" | sudo tee -a /etc/systemd/system/OnlineLLM.service > /dev/null
+            # Set the OPENAI_API_KEY as an environment variable in systemd service
+            sudo bash -c "echo 'Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"' >> /etc/systemd/system/OnlineLLM.service"
 
             # Reload systemd to apply changes
             sudo systemctl daemon-reload
