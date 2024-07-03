@@ -42,7 +42,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
             # Move application to appropriate directory
             sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
-            sudo chown root:root /usr/local/bin/OnlineLLM
+            sudo chown ubuntu:ubuntu /usr/local/bin/OnlineLLM
             sudo chmod 755 /usr/local/bin/OnlineLLM
 
             # Move and set up service file
@@ -51,7 +51,7 @@ jobs:
             sudo chmod 644 /etc/systemd/system/OnlineLLM.service
 
             # Set the OPENAI_API_KEY as an environment variable in systemd service
-            sudo bash -c "echo 'Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"' >> /etc/systemd/system/OnlineLLM.service"
+            sudo sed -i "s|^Environment=.*|Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"|g" /etc/systemd/system/OnlineLLM.service
 
             # Reload systemd to apply changes
             sudo systemctl daemon-reload
