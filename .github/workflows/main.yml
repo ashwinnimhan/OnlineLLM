@@ -36,7 +36,6 @@ jobs:
 
           # Transfer application to EC2 instance using SCP
           scp -o StrictHostKeyChecking=no target/release/OnlineLLM ubuntu@$EC2_HOST:/home/ubuntu/
-          scp -o StrictHostKeyChecking=no .github/workflows/OnlineLLM.service ubuntu@$EC2_HOST:/home/ubuntu/
 
           # SSH into EC2 instance and execute commands
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
@@ -45,34 +44,18 @@ jobs:
             sudo chown ubuntu:ubuntu /usr/local/bin/OnlineLLM
             sudo chmod 755 /usr/local/bin/OnlineLLM
 
-            # Move and set up service file
-            sudo mv /home/ubuntu/OnlineLLM.service /etc/systemd/system/OnlineLLM.service
-            sudo chown root:root /etc/systemd/system/OnlineLLM.service
-            sudo chmod 644 /etc/systemd/system/OnlineLLM.service
+            # Set the OPENAI_API_KEY as an environment variable
+            export OPENAI_API_KEY=$OPENAI_API_KEY
 
-            # Set the OPENAI_API_KEY as an environment variable in systemd service
-            sudo sed -i "s|^Environment=.*|Environment=\"OPENAI_API_KEY=$OPENAI_API_KEY\"|g" /etc/systemd/system/OnlineLLM.service
+            # Run the application using nohup
+            nohup /usr/local/bin/OnlineLLM > output.log 2>&1 &
+            echo $ > pid.txt
 
-            # Reload systemd to apply changes
-            sudo systemctl daemon-reload
-
-            # Restart your application service
-            sudo systemctl restart OnlineLLM || echo "Failed to restart OnlineLLM service"
-
-            # Enable the service to start on boot
-            sudo systemctl enable OnlineLLM
-
-            # Check if the service is running and display status
-            sudo systemctl status OnlineLLM
-
-            # Display recent logs
-            sudo journalctl -u OnlineLLM -n 50 --no-pager
-
-            # Check if the service is active
-            if sudo systemctl is-active --quiet OnlineLLM; then
-              echo "OnlineLLM service is running"
+            # Check if the application is running
+            if ps -p $(cat pid.txt) > /dev/null; then
+              echo "OnlineLLM application is running"
             else
-              echo "OnlineLLM service is not running"
+              echo "OnlineLLM application is not running"
               exit 1
             fi
           '
