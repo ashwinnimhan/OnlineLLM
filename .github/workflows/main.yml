@@ -31,24 +31,53 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          # Set up SSH key
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Transfer application to EC2 instance using SCP
-          scp -i ~/.ssh/id_rsa target/release/OnlineLLM $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+          # Set up SSH key using ssh-agent
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
 
-          # SSH into EC2 instance
-          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST '
+          # Transfer application to EC2 instance using SCP
+          scp -o StrictHostKeyChecking=no target/release/OnlineLLM $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+
+          # SSH into EC2 instance and execute commands
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST '
+            # Update package list
+            sudo apt update
+
             # Move application to appropriate directory
             sudo mv /home/$EC2_USER/OnlineLLM /usr/local/bin/OnlineLLM
             sudo chown root:root /usr/local/bin/OnlineLLM
             sudo chmod 755 /usr/local/bin/OnlineLLM
 
-            # Set environment variable
-            echo "export OPENAI_API_KEY=$OPENAI_API_KEY" | sudo tee -a /etc/profile.d/openai_api.sh > /dev/null
+            # Check if service file exists
+            if [ ! -f /etc/systemd/system/OnlineLLM.service ]; then
+              echo "OnlineLLM.service file not found. Please create it first."
+              exit 1
+            fi
+
+            # Set environment variable in systemd service file
+            sudo sed -i "/Environment=OPENAI_API_KEY=.*/c\Environment=OPENAI_API_KEY=$OPENAI_API_KEY" /etc/systemd/system/OnlineLLM.service
+            sudo systemctl daemon-reload
+
+            # Restart your application service
+            sudo systemctl restart OnlineLLM || echo "Failed to restart OnlineLLM service"
+
+            # Enable the service to start on boot
+            sudo systemctl enable OnlineLLM
+
+            # Check if the service is running
+            if sudo systemctl is-active --quiet OnlineLLM; then
+              echo "OnlineLLM service is running"
+            else
+              echo "OnlineLLM service is not running"
+              exit 1
+            fi
           '
 
-          # Optionally, restart your application service on the EC2 instance
-          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST 'sudo systemctl restart OnlineLLM'
+      - name: Verify deployment
+        run: |
+          if ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST 'systemctl is-active --quiet OnlineLLM'; then
+            echo "Deployment successful"
+          else
+            echo "Deployment failed"
+            exit 1
+          fi
