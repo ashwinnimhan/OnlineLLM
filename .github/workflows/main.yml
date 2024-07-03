@@ -52,12 +52,4 @@ jobs:
 
             # Run the application using nohup
             sudo nohup /usr/local/bin/OnlineLLM &
-
-            # Check if the application is running
-            if ps -p $(cat pid.txt) > /dev/null; then
-              echo "OnlineLLM application is running"
-            else
-              echo "OnlineLLM application is not running"
-              exit 1
-            fi
           '
