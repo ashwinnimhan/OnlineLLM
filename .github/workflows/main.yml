@@ -48,11 +48,7 @@ jobs:
             sudo chmod 755 /usr/local/bin/OnlineLLM
 
             # Set the OPENAI_API_KEY as an environment variable
-            echo "export OPENAI_API_KEY=$OPENAI_API_KEY" | sudo tee /etc/profile.d/openai.sh > /dev/null
-            sudo chmod +x /etc/profile.d/openai.sh
-            source /etc/profile.d/openai.sh
-            echo "export OPENAI_API_KEY=$OPENAI_API_KEY" >> ~/.bashrc
-            source ~/.bashrc
+            sudo sh -c 'echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> /etc/environment'
 
             # Run the application using nohup with output redirection
             sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
