@@ -36,6 +36,7 @@ jobs:
 
           # Transfer application to EC2 instance using SCP
           scp -o StrictHostKeyChecking=no target/release/OnlineLLM ubuntu@$EC2_HOST:/home/ubuntu/
+          scp -o StrictHostKeyChecking=no .github/workflows/OnlineLLM.service ubuntu@$EC2_HOST:/etc/systemd/system/
 
           # SSH into EC2 instance and execute commands
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
