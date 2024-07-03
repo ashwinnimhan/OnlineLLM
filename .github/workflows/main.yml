@@ -51,8 +51,7 @@ jobs:
             export OPENAI_API_KEY=$OPENAI_API_KEY
 
             # Run the application using nohup
-            nohup /usr/local/bin/OnlineLLM &
-            echo $ > pid.txt
+            sudo nohup /usr/local/bin/OnlineLLM &
 
             # Check if the application is running
             if ps -p $(cat pid.txt) > /dev/null; then
