@@ -5,13 +5,13 @@ Repo for an Online LLM implemented in Rust Lang
 Here is some of the research that helped inform my decisions on the system architecture.
 
 #### 1. Question Analysis and Context Retrieval
-- Question Categorization and Premise Check
-- In-Context Learning via Search Engine Responses[^1]
+- Question Categorization and Premise Check (Not Done)
+- In-Context Learning via Search Engine Responses[^1] (Google, Yahoo, Bing Implemented - using yahoo and bing)
 
 #### 2. Context Processing and Optimization
-- Metadata extraction
-- Reranking of Context Chunks to alleviate loss in the middle issue
-- Prompt compression and Adaptive granular control during compression[^2]
+- Metadata extraction (title, publicher, timestamp, url, snippet)
+- Reranking of Context Chunks to alleviate loss in the middle issue (simple rerank based on published time)
+- Prompt compression and Adaptive granular control during compression[^2] (Not Done)
 
 #### 3. Reasoning Approaches
 - Single-hop Reasoning

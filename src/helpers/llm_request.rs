@@ -1,5 +1,5 @@
 use reqwest::Error;
-use crate::helpers::common::{ChatCompletionRequest, Message, ChatCompletionResponse};
+use crate::helpers::common::{ChatCompletionRequest, Message, ChatCompletionResponse, Choice, Usage};
 
 pub async fn generate_chat_completion(
     api_key: &str,

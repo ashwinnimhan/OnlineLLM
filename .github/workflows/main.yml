@@ -1,0 +1,54 @@
+name: PR deploy
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build Rust application
+        run: cargo build --release
+
+      - name: Deploy to EC2 and set environment variable
+        env:
+          EC2_USER: ec2-user
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Set up SSH key
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Transfer application to EC2 instance using SCP
+          scp -i ~/.ssh/id_rsa target/release/OnlineLLM $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+
+          # SSH into EC2 instance
+          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST '
+            # Move application to appropriate directory
+            sudo mv /home/$EC2_USER/OnlineLLM /usr/local/bin/OnlineLLM
+            sudo chown root:root /usr/local/bin/OnlineLLM
+            sudo chmod 755 /usr/local/bin/OnlineLLM
+
+            # Set environment variable
+            echo "export OPENAI_API_KEY=$OPENAI_API_KEY" | sudo tee -a /etc/profile.d/openai_api.sh > /dev/null
+          '
+
+          # Optionally, restart your application service on the EC2 instance
+          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST 'sudo systemctl restart OnlineLLM'

@@ -52,3 +52,12 @@ pub struct Usage {
   pub completion_tokens: u32,
   pub total_tokens: u32,
 }
+
+#[derive(Clone)]
+pub struct NewsItem {
+  pub title: String,
+  pub url: String,
+  pub source: String,
+  pub snippet: String,
+  pub time: i64
+}

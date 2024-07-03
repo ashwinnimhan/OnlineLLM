@@ -1,28 +1,23 @@
 use anyhow::{Context, Result};
+use reqwest::Error;
 use select::document::Document;
 use select::predicate::Name;
 
-/** 
- * Accepts a list of urls and attempts crawl using the crawl_page function
- * Returns text from pages that were successfully crawled as Vec. */  
 pub async fn fetch(urls: Vec<String>) -> Result<Vec<String>> {
-  let mut text_content = Vec::new();
-  for url in urls {
-    match crawl_page(&url).await {
-      Ok(text) => text_content.push(text),
-      Err(err) => {
-        eprintln!("Error crawling {}: {}", url, err);
-        continue;
-      }
+    let mut text_content = Vec::new();
+    for url in urls {
+        match crawl_page(&url).await {
+            Ok(text) => text_content.push(text),
+            Err(err) => {
+                eprintln!("Error crawling {}: {}", url, err);
+                continue;
+            }
+        }
     }
-  }
-  Ok(text_content)
+    Ok(text_content)
 }
 
-/** 
- * Fetches page content and parses it to get plain text from body of page
- * Returns plain text from the crawled webpage */ 
-async fn crawl_page(url: &str) -> Result<String> {
+pub async fn crawl_page(url: &str) -> Result<String> {
   let client = reqwest::Client::new();
   let response = client
       .get(url)

@@ -1,0 +1,13 @@
+[Unit]
+Description=My Rust Application Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/my_rust_app
+Restart=always
+User=ec2-user
+Environment="OPENAI_API_KEY=%OPENAI_API_KEY%"
+WorkingDirectory=/usr/local/bin
+
+[Install]
+WantedBy=multi-user.target
