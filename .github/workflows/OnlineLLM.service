@@ -1,11 +1,11 @@
 [Unit]
-Description=My Rust Application Service
+Description=OnlineLLM
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/my_rust_app
+ExecStart=/usr/local/bin/OnlineLLM
 Restart=always
-User=ec2-user
+User=ubuntu
 Environment="OPENAI_API_KEY=%OPENAI_API_KEY%"
 WorkingDirectory=/usr/local/bin
 
