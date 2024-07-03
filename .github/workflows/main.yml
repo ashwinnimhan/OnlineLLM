@@ -26,7 +26,6 @@ jobs:
 
       - name: Deploy to EC2 and set environment variable
         env:
-          EC2_USER: ${{ secrets.EC2_USER }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -36,15 +35,15 @@ jobs:
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
 
           # Transfer application to EC2 instance using SCP
-          scp -o StrictHostKeyChecking=no target/release/OnlineLLM $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+          scp -o StrictHostKeyChecking=no target/release/OnlineLLM ubuntu@$EC2_HOST:/home/ubuntu/
 
           # SSH into EC2 instance and execute commands
-          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST '
+          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
             # Update package list
             sudo apt update
 
             # Move application to appropriate directory
-            sudo mv /home/$EC2_USER/OnlineLLM /usr/local/bin/OnlineLLM
+            sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
             sudo chown root:root /usr/local/bin/OnlineLLM
             sudo chmod 755 /usr/local/bin/OnlineLLM
 
@@ -75,7 +74,7 @@ jobs:
 
       - name: Verify deployment
         run: |
-          if ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST 'systemctl is-active --quiet OnlineLLM'; then
+          if ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST 'systemctl is-active --quiet OnlineLLM'; then
             echo "Deployment successful"
           else
             echo "Deployment failed"
