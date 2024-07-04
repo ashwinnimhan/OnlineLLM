@@ -1,17 +1,12 @@
 name: PR deploy
 
 on:
-  # pull_request:
-  #   types: [closed]
-  #   branches:
-  #     - main
   push:
     branches:
-      - dev
+      - test
 
 jobs:
   build-and-deploy:
-    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -27,29 +22,51 @@ jobs:
       - name: Build Rust application
         run: cargo build --release
 
-      - name: Deploy to EC2 and set environment variable
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure VM
         env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          AZURE_VM_NAME: ${{ secrets.AZURE_VM_NAME }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_VM_USERNAME: ${{ secrets.AZURE_VM_USERNAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          # Set up SSH key using ssh-agent
-          eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+          # Copy application to Azure VM
+          az vm run-command invoke \
+            --resource-group $AZURE_RESOURCE_GROUP \
+            --name $AZURE_VM_NAME \
+            --command-id RunShellScript \
+            --scripts "mkdir -p /home/$AZURE_VM_USERNAME/app"
 
-          # Transfer application to EC2 instance using SCP
-          scp -o StrictHostKeyChecking=no target/release/OnlineLLM ubuntu@$EC2_HOST:/home/ubuntu/
+          az vm copy \
+            --resource-group $AZURE_RESOURCE_GROUP \
+            --name $AZURE_VM_NAME \
+            --source-local-path "./target/release/OnlineLLM" \
+            --destination "/home/$AZURE_VM_USERNAME/app/OnlineLLM"
 
-          # SSH into EC2 instance and execute commands
-          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
-            # Move application to appropriate directory
-            sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
-            sudo chown ubuntu:ubuntu /usr/local/bin/OnlineLLM
-            sudo chmod 755 /usr/local/bin/OnlineLLM            
+          # Execute commands on Azure VM
+          az vm run-command invoke \
+            --resource-group $AZURE_RESOURCE_GROUP \
+            --name $AZURE_VM_NAME \
+            --command-id RunShellScript \
+            --scripts "
+              sudo mv /home/$AZURE_VM_USERNAME/app/OnlineLLM /usr/local/bin/OnlineLLM
+              sudo chown $AZURE_VM_USERNAME:$AZURE_VM_USERNAME /usr/local/bin/OnlineLLM
+              sudo chmod 755 /usr/local/bin/OnlineLLM
+              
+              # Set environment variable
+              echo 'export OPENAI_API_KEY=$OPENAI_API_KEY' | sudo tee -a /etc/environment
+              
+              # Run the application using nohup with output redirection
+              sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
+              
+              echo 'Application started'
+            "
 
-            # Run the application using nohup with output redirection
-            sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
-
-            # Ensure the command completes
-            echo "Application started"
-          '
+      - name: Logout from Azure
+        run: |
+          az logout
+        if: always()
