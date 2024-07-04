@@ -83,11 +83,10 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
   }
 
   // Step 4: Send request to LLM
-  // let api_key = match env::var("OPENAI_API_KEY") {
-  //   Ok(value) => { value }
-  //   Err(e) => { "".to_string() }
-  // };
-  let api_key = String::from("sk-proj-9NJQ1omnL0GcTxK85k3BT3BlbkFJZxHfUj71sgDayM7x2Qfx");
+  let api_key = match env::var("OPENAI_API_KEY") {
+    Ok(value) => { value }
+    Err(e) => { "".to_string() }
+  };
   let result = match llm_request::generate_chat_completion(&api_key, prompt).await {
     Ok(result) => result,
     Err(e) => return HttpResponse::InternalServerError().json(format!("Error in LLM request: {}", e)),
