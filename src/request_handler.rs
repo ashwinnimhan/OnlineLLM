@@ -74,21 +74,20 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
   if !pages.is_empty() {
     for pg in &pages {
       let length = 1500;
-      let pg_cut = if pg.len() > length { &pg[..length] } else { pg };
-      println!("{}", pg_cut);
+      let pg_cut = if pg.len() > length { &pg.chars().take(length).collect() } else { pg };
       prompt.push((pg_cut.to_string(), String::from("user")));
     }
   } else {
     let no_context_message = "no context found - just answer based on your knowledge";
-    println!("{}", no_context_message);
     prompt.push((no_context_message.to_string(), String::from("user")));
   }
 
   // Step 4: Send request to LLM
-  let api_key = match env::var("OPENAI_API_KEY") {
-    Ok(value) => { value }
-    Err(e) => { "".to_string() }
-  };
+  // let api_key = match env::var("OPENAI_API_KEY") {
+  //   Ok(value) => { value }
+  //   Err(e) => { "".to_string() }
+  // };
+  let api_key = String::from("sk-proj-9NJQ1omnL0GcTxK85k3BT3BlbkFJZxHfUj71sgDayM7x2Qfx");
   let result = match llm_request::generate_chat_completion(&api_key, prompt).await {
     Ok(result) => result,
     Err(e) => return HttpResponse::InternalServerError().json(format!("Error in LLM request: {}", e)),
