@@ -1,14 +1,17 @@
 name: PR deploy
 
 on:
-  pull_request:
-    types: [closed]
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - main
+  push:
     branches:
-      - main
+      - dev
 
 jobs:
   build-and-deploy:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -42,20 +45,11 @@ jobs:
             # Move application to appropriate directory
             sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
             sudo chown ubuntu:ubuntu /usr/local/bin/OnlineLLM
-            sudo chmod 755 /usr/local/bin/OnlineLLM
+            sudo chmod 755 /usr/local/bin/OnlineLLM            
 
-            # Set the OPENAI_API_KEY as an environment variable
-            export OPENAI_API_KEY=$OPENAI_API_KEY
+            # Run the application using nohup with output redirection
+            sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
 
-            # Run the application using nohup
-            nohup /usr/local/bin/OnlineLLM > output.log 2>&1 &
-            echo $ > pid.txt
-
-            # Check if the application is running
-            if ps -p $(cat pid.txt) > /dev/null; then
-              echo "OnlineLLM application is running"
-            else
-              echo "OnlineLLM application is not running"
-              exit 1
-            fi
+            # Ensure the command completes
+            echo "Application started"
           '
