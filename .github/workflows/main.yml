@@ -45,10 +45,7 @@ jobs:
             # Move application to appropriate directory
             sudo mv /home/ubuntu/OnlineLLM /usr/local/bin/OnlineLLM
             sudo chown ubuntu:ubuntu /usr/local/bin/OnlineLLM
-            sudo chmod 755 /usr/local/bin/OnlineLLM
-
-            # Set the OPENAI_API_KEY as an environment variable
-            sudo sh -c echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> /etc/environment
+            sudo chmod 755 /usr/local/bin/OnlineLLM            
 
             # Run the application using nohup with output redirection
             sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
