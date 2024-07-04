@@ -48,7 +48,7 @@ jobs:
             sudo chmod 755 /usr/local/bin/OnlineLLM            
 
             # Run the application using nohup with output redirection
-            sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
+            sudo nohup /usr/local/bin/OnlineLLM > /usr/local/bin/log.txt 2>&1 &
 
             # Ensure the command completes
             echo "Application started"
