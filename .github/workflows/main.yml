@@ -34,39 +34,35 @@ jobs:
           AZURE_VM_USERNAME: ${{ secrets.AZURE_VM_USERNAME }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          # Copy application to Azure VM
-          az vm run-command invoke \
-            --resource-group $AZURE_RESOURCE_GROUP \
-            --name $AZURE_VM_NAME \
-            --command-id RunShellScript \
-            --scripts "mkdir -p /home/$AZURE_VM_USERNAME/app"
-
-          az vm copy \
-            --resource-group $AZURE_RESOURCE_GROUP \
-            --name $AZURE_VM_NAME \
-            --source-local-path "./target/release/OnlineLLM" \
-            --destination "/home/$AZURE_VM_USERNAME/app/OnlineLLM"
-
-          # Execute commands on Azure VM
+          # Encode the binary file to base64
+          ENCODED_BINARY=$(base64 -w 0 ./target/release/OnlineLLM)
+          
+          # Copy application to Azure VM and set up environment
           az vm run-command invoke \
             --resource-group $AZURE_RESOURCE_GROUP \
             --name $AZURE_VM_NAME \
             --command-id RunShellScript \
             --scripts "
-              sudo mv /home/$AZURE_VM_USERNAME/app/OnlineLLM /usr/local/bin/OnlineLLM
+              # Decode and save the binary
+              echo '$ENCODED_BINARY' | base64 -d > /tmp/OnlineLLM
+              
+              # Move the binary to the correct location and set permissions
+              sudo mv /tmp/OnlineLLM /usr/local/bin/OnlineLLM
               sudo chown $AZURE_VM_USERNAME:$AZURE_VM_USERNAME /usr/local/bin/OnlineLLM
               sudo chmod 755 /usr/local/bin/OnlineLLM
               
               # Set environment variable
               echo 'export OPENAI_API_KEY=$OPENAI_API_KEY' | sudo tee -a /etc/environment
               
-              # Run the application using nohup with output redirection
-              sudo nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
+              # Stop any existing instance of the application
+              sudo pkill -f OnlineLLM || true
               
-              echo 'Application started'
+              # Run the application using nohup with output redirection
+              sudo -u $AZURE_VM_USERNAME nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
+              
+              echo 'Application deployed and started'
             "
 
       - name: Logout from Azure
-        run: |
-          az logout
+        run: az logout
         if: always()
