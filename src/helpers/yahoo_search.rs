@@ -60,5 +60,6 @@ pub async fn fetch(query: &str) -> Result<Vec<NewsItem>> {
 
     news_items.sort_by(|a, b| a.time.cmp(&b.time));
 
+    println!("Yahoo Fetched");
     Ok(news_items)
 }

@@ -34,5 +34,6 @@ pub async fn generate_chat_completion(
     .json::<ChatCompletionResponse>()
     .await?;
 
+  println!("LLM Response\n\n");
   Ok(response)
 }
