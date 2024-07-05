@@ -51,6 +51,11 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
   let mut pages: Vec<String> = vec![];
   if !combined.is_empty() {
     for entry in &combined {
+      if entry.url.is_empty() {
+        eprintln!("Skipping entry with empty URL: {:?}", entry);
+        continue;
+      }
+      
       let text_content = match web_crawler::crawl_page(&entry.url).await {
         Ok(content) => content,
         Err(e) => {
