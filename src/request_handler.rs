@@ -15,7 +15,7 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
   if req.messages[0].role == "user".to_string() {
       query = req.messages[0].content.clone();
   }
-
+  println!("Query Recieved {}", &query);
   // Step 1: Use bing and yahoo search to fetch search results
   let mut bing_records: Vec<NewsItem> = match bing_search::fetch(&query).await {
       Ok(l) => l,
@@ -31,7 +31,6 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
         Vec::new() // Continue with an empty vector
       },
   };
-
   // Take the Top 5 Bing links by timestamp, and Top 3 from Yahoo!
   let mut combined = Vec::new();
   // Add up to 5 elements from bing_records
@@ -48,11 +47,17 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
     &yahoo_records[..]
   };
   combined.extend_from_slice(yahoo_slice);
-
   // Step 2: Crawl text from the 8 search results.
   let mut pages: Vec<String> = vec![];
   if !combined.is_empty() {
     for entry in &combined {
+      println!("{}, {}, {}", &entry.title, &entry.source, &entry.url);
+      
+      if entry.url.is_empty() {
+        eprintln!("Skipping entry with empty URL");
+        continue;
+      }
+      
       let text_content = match web_crawler::crawl_page(&entry.url).await {
         Ok(content) => content,
         Err(e) => {
@@ -66,7 +71,6 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
       ));
     }
   }
-
   // Step 3: Prepare the prompt for LLM
   let mut prompt = vec![
     (format!("NOTE: DO NOT CRAWL LINKS. Based on the following information, and the news article's metadata {}", query), String::from("user")),
@@ -81,17 +85,17 @@ pub async fn chat_completion(req: web::Json<ChatCompletionRequest>) -> impl Resp
     let no_context_message = "no context found - just answer based on your knowledge";
     prompt.push((no_context_message.to_string(), String::from("user")));
   }
-
+  
   // Step 4: Send request to LLM
   let api_key = match env::var("OPENAI_API_KEY") {
     Ok(value) => { value }
     Err(e) => { "".to_string() }
   };
+  println!("LLM Request Submitted");
   let result = match llm_request::generate_chat_completion(&api_key, prompt).await {
     Ok(result) => result,
     Err(e) => return HttpResponse::InternalServerError().json(format!("Error in LLM request: {}", e)),
   };
-
   HttpResponse::Ok().json(result)
 }
 
