@@ -65,7 +65,8 @@ jobs:
               sudo pkill -f OnlineLLM || true
               
               # Run the application using nohup with output redirection
-              sudo -u $AZURE_VM_USERNAME nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
+              sudo nohup /usr/local/bin/OnlineLLM > /home/$AZURE_VM_USERNAME/log.txt 2>&1 &
+              # sudo -u $AZURE_VM_USERNAME nohup /usr/local/bin/OnlineLLM > /dev/null 2>&1 &
               
               echo 'Application deployed and started'
             "
